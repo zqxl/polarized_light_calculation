@@ -39,6 +39,8 @@ class MultiLayerModel:
         self.S12 = 0
         self.S21 = 0
         self.S22 = 0
+        # 初始化S矩阵
+        self.S = np.zeros([2, 2])
 
     @staticmethod
     def get_I(lp: Layer, lc: Layer):
@@ -80,31 +82,39 @@ class MultiLayerModel:
         l_air = Layer(0, 0, 1)
         self.layers.insert(0, l_air)
         # 计算I_01,即空气与第一层界面的界面矩阵
-        S = self.get_I(self.layers[0], self.layers[1])
+        scatter_matrix = self.get_I(self.layers[0], self.layers[1])
         # 循环计算S的表达式
         for i in range(1, len(self.layers)-1):
-            S = np.dot(S, self.get_L(self.layers[i]))
-            S = np.dot(S, self.get_I(self.layers[i], self.layers[i+1]))
-        return S
+            scatter_matrix = np.dot(scatter_matrix, self.get_L(self.layers[i]))
+            scatter_matrix = np.dot(scatter_matrix, self.get_I(self.layers[i], self.layers[i+1]))
+        return scatter_matrix
 
-    def caculate_S(self):
+    def calculate_S(self):
         """
         将一系列数据带入get_S()得出的表达式
+        待解决：求出S的表达式之后，当波长或者其中一层的厚度为长度大于1的一维数组时，无法利用numpy的广播Broadcasting机制进行一次性的求解，
+        不过好在在求得了S表达式之后由于已经将大部分运算完成，就算使用for循环进行求解，也不会花费太长时间
         :return:
         """
+        self.S = self.get_S()
+        self.S11 = self.S[0, 0]
+        self.S12 = self.S[0, 1]
+        self.S21 = self.S[1, 0]
+        self.S22 = self.S[1, 1]
+
+
+        pass
 
 
 if __name__ == '__main__':
-    l1 = Layer(1, 1, 0,)
-    l2 = Layer(2, 1, 0,)
-    l3 = Layer(3, 1, 0,)
+    l1 = Layer(1, 1, 0)
+    l2 = Layer(2, 1, 0)
+    l3 = Layer(3, 1, 0)
 
     ml = MultiLayerModel([l1, l2, l3])
-    I = ml.get_I(l1, l2)
-    L = ml.get_L(l1)
+    ml.calculate_S()
+    print(ml.S)
 
-    S = ml.calculate_S()
-
-
+    pass
     pass
 
