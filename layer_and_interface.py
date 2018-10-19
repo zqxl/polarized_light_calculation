@@ -107,11 +107,14 @@ class MultiLayerModel:
 
 
 if __name__ == '__main__':
+    # 创建五层模型中的每一层（第0层为空气层）
     l1 = Layer(1, 1, 0)
     l2 = Layer(2, 1, 0)
     l3 = Layer(3, 1, 0)
-
-    ml = MultiLayerModel([l1, l2, l3])
+    l4 = Layer(4, 1, 0)
+    # 构建多层模型
+    ml = MultiLayerModel([l1, l2, l3, l4])
+    # 计算获得散射矩阵S的表达式并打印
     ml.calculate_S()
     print(ml.S)
 
