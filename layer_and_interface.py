@@ -15,7 +15,7 @@ class Layer:
         self.refraction_indices = refraction_indices
 
         # 次数使用了符号变量，用来推导算式。推导结束后将使用实际的数据代替相应的符号
-        d, ri = sym.symbols('d%d, ri%d' % (layer_index, layer_index))  # 声明符号变量，否则会认为没有定义
+        d, ri = sym.symbols('d%d, ri%d' % (layer_index, layer_index))  # 声明符号变量
         self.d = d
         self.ri = ri
 
@@ -65,9 +65,6 @@ class MultiLayerModel:
         :param l: 层对象
         :return: l层的特征矩阵
         """
-        # 待解决，此处可能要手动计算exp(b)
-        # 参考https://stackoverflow.com/questions/27190750/sympy-typeerror-cant-convert-expression-to-float
-        # ib = sym.complex(0, 2*np.pi*l.d*l.ri/self.wl)
         ib = 0 + 2*np.pi*l.d*l.ri/self.wl * sym.I
         L = np.array([[sym.exp(ib), 0], [0, sym.exp(-ib)]])
 
@@ -87,21 +84,21 @@ class MultiLayerModel:
         for i in range(1, len(self.layers)-1):
             scatter_matrix = np.dot(scatter_matrix, self.get_L(self.layers[i]))
             scatter_matrix = np.dot(scatter_matrix, self.get_I(self.layers[i], self.layers[i+1]))
-        return scatter_matrix
+
+        self.S = scatter_matrix
+        # 将创建符号表达式转换成python函数，以便于利用numpy的广播Broadcasting机制进行高效的矩阵点乘运算 待完成：下面的函数需要传入正确的参数
+        self.S11 = sym.lambdify(('x1', 'y1'), self.S[0, 0], "numpy")
+        self.S12 = sym.lambdify(('x1', 'y1'), self.S[0, 1], "numpy")
+        self.S21 = sym.lambdify(('x1', 'y1'), self.S[1, 0], "numpy")
+        self.S22 = sym.lambdify(('x1', 'y1'), self.S[1, 1], "numpy")
+
+        # return scatter_matrix
 
     def calculate_S(self):
         """
         将一系列数据带入get_S()得出的表达式
-        待解决：求出S的表达式之后，当波长或者其中一层的厚度为长度大于1的一维数组时，无法利用numpy的广播Broadcasting机制进行一次性的求解，
-        不过好在在求得了S表达式之后由于已经将大部分运算完成，就算使用for循环进行求解，也不会花费太长时间
         :return:
         """
-        self.S = self.get_S()
-        self.S11 = self.S[0, 0]
-        self.S12 = self.S[0, 1]
-        self.S21 = self.S[1, 0]
-        self.S22 = self.S[1, 1]
-
 
         pass
 
