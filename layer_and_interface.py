@@ -21,6 +21,21 @@ class Layer:
 
 
 class MultiLayerModel:
+    """
+    该类用来创建多层模型。使用方法如下：
+    # 创建五层模型中的每一层（第0层为空气层）
+    l1 = Layer(1, 1, 0)
+    l2 = Layer(2, 1, 0)
+    l3 = Layer(3, 1, 0)
+    l4 = Layer(4, 1, 0)
+    # 构建多层模型
+    ml = MultiLayerModel([l1, l2, l3, l4])
+    # 计算得到S矩阵的每一个元素S11，S22，S33，S44分别表示S矩阵四个元素。其中args应根据层数不同传入不同数量的参数。
+    # 如下，其中wl为波长，ri(x)为第x层的复折射率，d(x)为第x层的厚度（单位：nm）。以下所有参数均为numpy.array，传入参数时应满足其广播机制。
+    S11 = ml.S11(wl, ri0, d0, ri1, d1, ri2, d2, ri3, d3, ri4, d4)
+    ... ...
+
+    """
     def __init__(self, layers=None, wavelength=None):
         """
         多层模型
@@ -41,6 +56,8 @@ class MultiLayerModel:
         self.S22 = 0
         # 初始化S矩阵
         self.S = np.zeros([2, 2])
+
+        self.get_S()
 
     @staticmethod
     def get_I(lp: Layer, lc: Layer):
@@ -86,32 +103,24 @@ class MultiLayerModel:
             scatter_matrix = np.dot(scatter_matrix, self.get_I(self.layers[i], self.layers[i+1]))
 
         self.S = scatter_matrix
-        # 将创建符号表达式转换成python函数，以便于利用numpy的广播Broadcasting机制进行高效的矩阵点乘运算 待完成：下面的函数需要传入正确的参数
-        all_symbol_variable = ['wl']
+        # 将创建符号表达式转换成python函数，以便于利用numpy的广播Broadcasting机制进行高效的矩阵点乘运算
+        all_symbol_variable = [self.wl]
+
         for l in self.layers:
             all_symbol_variable.extend([l.ri, l.d])
+
         self.S11 = sym.lambdify(all_symbol_variable, self.S[0, 0], "numpy")
         self.S12 = sym.lambdify(all_symbol_variable, self.S[0, 1], "numpy")
         self.S21 = sym.lambdify(all_symbol_variable, self.S[1, 0], "numpy")
         self.S22 = sym.lambdify(all_symbol_variable, self.S[1, 1], "numpy")
 
-        f_S11 = sym.lambdify(all_symbol_variable, self.S[0, 0], "numpy")
-
-        pass
+        print("多层模型S矩阵的表达式已经计算完成。调用MultiLayerModel.S11等函数时，请传入以下参数：")
+        print(all_symbol_variable)
 
         # """  ！！！重要！！！
         # a = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
         # f_S11(*a)
         # """
-        # return scatter_matrix
-
-    def calculate_S(self):
-        """
-        将一系列数据带入get_S()得出的表达式
-        :return:
-        """
-        self.get_S()
-        pass
 
 
 if __name__ == '__main__':
@@ -123,8 +132,8 @@ if __name__ == '__main__':
     # 构建多层模型
     ml = MultiLayerModel([l1, l2, l3, l4])
     # 计算获得散射矩阵S的表达式并打印
-    ml.calculate_S()
-    print(ml.S)
+    # ml.get_S()
+    # print(ml.S)
 
     pass
     pass
