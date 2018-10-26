@@ -87,11 +87,22 @@ class MultiLayerModel:
 
         self.S = scatter_matrix
         # 将创建符号表达式转换成python函数，以便于利用numpy的广播Broadcasting机制进行高效的矩阵点乘运算 待完成：下面的函数需要传入正确的参数
-        self.S11 = sym.lambdify(('x1', 'y1'), self.S[0, 0], "numpy")
-        self.S12 = sym.lambdify(('x1', 'y1'), self.S[0, 1], "numpy")
-        self.S21 = sym.lambdify(('x1', 'y1'), self.S[1, 0], "numpy")
-        self.S22 = sym.lambdify(('x1', 'y1'), self.S[1, 1], "numpy")
+        all_symbol_variable = ['wl']
+        for l in self.layers:
+            all_symbol_variable.extend([l.ri, l.d])
+        self.S11 = sym.lambdify(all_symbol_variable, self.S[0, 0], "numpy")
+        self.S12 = sym.lambdify(all_symbol_variable, self.S[0, 1], "numpy")
+        self.S21 = sym.lambdify(all_symbol_variable, self.S[1, 0], "numpy")
+        self.S22 = sym.lambdify(all_symbol_variable, self.S[1, 1], "numpy")
 
+        f_S11 = sym.lambdify(all_symbol_variable, self.S[0, 0], "numpy")
+
+        pass
+
+        # """  ！！！重要！！！
+        # a = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        # f_S11(*a)
+        # """
         # return scatter_matrix
 
     def calculate_S(self):
@@ -99,7 +110,7 @@ class MultiLayerModel:
         将一系列数据带入get_S()得出的表达式
         :return:
         """
-
+        self.get_S()
         pass
 
 
