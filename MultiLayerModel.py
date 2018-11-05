@@ -36,14 +36,20 @@ class MultiLayerModel:
     ... ...
 
     """
-    def __init__(self, layers=None, wavelength=None):
+    def __init__(self, incident_angle=0, layers=None, wavelength=None):
         """
         多层模型
         :type wavelength: np.ndarray
+        :param incident_angle: 入射角，角度
         :param layers: 由Layer对象为元素组成的列表,初始化时不包含空气层。从下标1-n分别代表第1-n层。
         :param wavelength: 波长,单位为nm
         """
         self.layers = layers or []
+        # 插入空气层
+        l_air = Layer(0, 0, 1)
+        self.layers.insert(0, l_air)
+        # 每一层的入射角
+        self.incident_angles=[incident_angle]
         # 实际的波长数值，为一维数组，
         self.wavelength = wavelength or np.array([0])
         # 符号变量用来表示波长
@@ -59,6 +65,15 @@ class MultiLayerModel:
 
         self.get_S()
 
+    def calculate_each_incident_angle(self):
+        """
+        计算每一层中光传播的角度的余弦值。使用的公式为《椭圆偏振测量术和偏振光》阿查姆P180,公式(4.3)
+        :return:
+        """
+        for l in self.layers[1:]:
+            cos_ia = sym.sqrt(1-(self.layers[0].ri/l.ri*sym.sin(self.incident_angles[0]))**2)
+            self.incident_angles.append(cos_ia)
+
     @staticmethod
     def get_I(lp: Layer, lc: Layer):
         """
@@ -67,6 +82,7 @@ class MultiLayerModel:
         :param lc: layer current    当前层
         :return: 界面矩阵InterfaceMatrix。如果波长或者厚度之一为长度大于1的一维数组，则I就是三维矩阵，且第三维与前述一维数组对应
         """
+        # 需要将p光和s光分开计算，待
         # 透射系数
         t = 2 * lp.ri * (lp.ri+lc.ri)
         # 反射系数
@@ -92,9 +108,8 @@ class MultiLayerModel:
         计算S矩阵的表达式，其形式为由一系列符号变量组成的表达式
         :return:
         """
-        # 插入空气层
-        l_air = Layer(0, 0, 1)
-        self.layers.insert(0, l_air)
+        # 计算所有层中的光线入射角
+        self.calculate_each_incident_angle()
         # 计算I_01,即空气与第一层界面的界面矩阵
         scatter_matrix = self.get_I(self.layers[0], self.layers[1])
         # 循环计算S的表达式
@@ -117,23 +132,17 @@ class MultiLayerModel:
         print("多层模型S矩阵的表达式已经计算完成。调用MultiLayerModel.S11等函数时，请传入以下参数：")
         print(all_symbol_variable)
 
-        # """  ！！！重要！！！
-        # a = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-        # f_S11(*a)
-        # """
+
 
 
 if __name__ == '__main__':
     # 创建五层模型中的每一层（第0层为空气层）
-    l1 = Layer(1, 1, 0)
-    l2 = Layer(2, 1, 0)
-    l3 = Layer(3, 1, 0)
-    l4 = Layer(4, 1, 0)
+    l1 = Layer(1)
+    l2 = Layer(2)
+    l3 = Layer(3)
+    l4 = Layer(4)
     # 构建多层模型
     ml = MultiLayerModel([l1, l2, l3, l4])
-    # 计算获得散射矩阵S的表达式并打印
-    # ml.get_S()
-    # print(ml.S)
 
     pass
     pass
